@@ -1,0 +1,59 @@
+﻿@page
+@model ClothingStoreAppUI.Pages.StockReceipts.ListModel
+@{
+}
+
+<div class="bg-secondary bg-opacity-10 py-2 mb-2">
+    <div class="container">
+        <h4>Danh Sách Phiếu Nhập Kho</h4>
+        <a href="/StockReceipts/Create" class="btn btn-primary">Tạo Phiếu Nhập Mới</a>
+    </div>
+</div>
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="container mt-3">
+        <div class="alert alert-danger">
+            @TempData["ErrorMessage"]
+        </div>
+    </div>
+}
+
+<div class="container">
+    @if (Model.StockReceipts == null || !Model.StockReceipts.Any())
+    {
+        <div class="alert alert-info mt-3">
+            Chưa có phiếu nhập kho nào.
+        </div>
+    }
+    else
+    {
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Mã Phiếu</th>
+                    <th>Ngày Tạo</th>
+                    <th>Nhân Viên</th>
+                    <th>Tổng Số Lượng</th>
+                    <th>Tổng Tiền</th>
+                    <th>Thao Tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var receipt in Model.StockReceipts)
+                {
+                    <tr>
+                        <td>@receipt.ReceiptId.ToString().Substring(0, 8)</td>
+                        <td>@receipt.DateCreated.ToString("dd/MM/yyyy")</td>
+                        <td>@receipt.EmployeeName</td>
+                        <td>@receipt.Items.Sum(i => i.Quantity)</td>
+                        <td>@receipt.TotalAmount.ToString("N0") VNĐ</td>
+                        <td>
+                            <a href="/StockReceipts/Details/@receipt.ReceiptId" class="btn btn-info btn-sm">Xem</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>

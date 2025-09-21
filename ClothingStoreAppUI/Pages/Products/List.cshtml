@@ -1,0 +1,44 @@
+﻿@page 
+@model ClothingStoreAppUI.Pages.Products.ListModel
+@{
+}
+
+
+<div class="bg-secondary bg-opacity-10 py-2 mb-2">
+    <div class="container">
+        <h4>List Product</h4>
+    </div>
+</div>
+<div class="container">
+    <table class="table">
+        <thead>
+            <tr>
+            <tr>
+                <td>Product Name</td>
+                <td>Category Name</td>
+                <td>Description</td>
+                <td>Price</td>
+                <td>Quantity</td>
+                <td>ImageUrl</td>
+                <td>CreateDate</td>
+                <td></td>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var product in Model.Products)
+            {
+                <tr>
+                    <td>@product.ProductName</td>
+                    <td>@product.CategoryName</td>
+                    <td>@product.Description</td>
+                    <td>@product.Price</td>
+                    <td>@product.Quantity</td>
+                    <td>@product.ImageUrl</td>
+                    <td>@product.CreateDate</td>
+                    <td><a href="/Products/Edit/@product.ProductID" class="btn btn-warning btn-sm">View</a></td>
+                </tr>
+            
+            }
+        </tbody>
+    </table>
+</div>

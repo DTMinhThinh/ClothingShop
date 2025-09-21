@@ -1,0 +1,28 @@
+﻿@page
+@model ClothingStoreAppUI.Pages.Categories.CreateModel
+@{
+}
+<div class="bg-secondary bg-opacity-10 py-2 mb-2">
+    <div class="container">
+        <h4>Add Category</h4>
+    </div>
+</div>
+
+<div>
+    <div class="container">
+        <form method="post">
+            <div class="mb-3">
+                <label for="CategoryName" class="form-label">Category Name</label>
+                <input type="text" class="form-control" id="CategoryName" name="CategoryName">
+            </div>
+            <div class="mb-3">
+                <button class="btn btn-primary" type="submit">Submit</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

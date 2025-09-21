@@ -1,0 +1,211 @@
+﻿@page
+@model ClothingStoreAppUI.Pages.StockReceipts.CreateModel
+@{
+}
+
+<div class="bg-secondary bg-opacity-10 py-2 mb-2">
+    <div class="container">
+        <h4>Tạo Phiếu Nhập Kho</h4>
+    </div>
+</div>
+
+<div class="container">
+    <form method="post" id="stockReceiptForm">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label class="form-label">Nhân Viên</label>
+                    <select class="form-select" asp-for="EmployeeId" required>
+                        <option value="">-- Chọn Nhân Viên --</option>
+                        @foreach (var employee in Model.Employees)
+                        {
+                            <option value="@employee.Value">@employee.Text</option>
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label class="form-label">Ngày Nhập</label>
+                    <input type="datetime-local" class="form-control"
+                           value="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" disabled>
+                    <small class="text-muted">Ngày nhập sẽ được tự động tạo</small>
+                </div>
+            </div>
+        </div>
+
+        <h5 class="mt-4">Chi Tiết Sản Phẩm</h5>
+
+        <div id="productItems">
+            <!-- Item đầu tiên - luôn hiển thị -->
+            <div class="card mb-3 product-item">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label class="form-label">Sản Phẩm</label>
+                            <select class="form-select product-select" name="Items[0].ProductId" required>
+                                <option value="">-- Chọn Sản Phẩm --</option>
+                                @foreach (var product in Model.Products)
+                                {
+                                    <option value="@product.Value">@product.Text</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Số Lượng</label>
+                            <input type="number" class="form-control quantity-input"
+                                   name="Items[0].Quantity" min="1" value="1" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Giá Nhập</label>
+                            <input type="number" class="form-control unit-cost-input"
+                                   name="Items[0].UnitCost" min="0" step="1000" value="0" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Thành Tiền</label>
+                            <input type="text" class="form-control item-total" readonly value="0">
+                        </div>
+                        <div class="col-md-1">
+                            <label class="form-label">&nbsp;</label>
+                            <button type="button" class="btn btn-danger btn-sm w-100"
+                                    onclick="removeProductItem(this)" disabled>
+                                X
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button type="button" class="btn btn-success mb-3" onclick="addProductItem()">
+            + Thêm Sản Phẩm
+        </button>
+
+        <div class="row mt-3">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h6>Tổng Số Lượng: <span id="totalQuantity">0</span></h6>
+                        <h6>Tổng Thành Tiền: <span id="totalAmount">0</span> VNĐ</h6>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-3">
+            <button type="submit" class="btn btn-primary">Lưu Phiếu Nhập</button>
+            <a href="/StockReceipts/List" class="btn btn-secondary">Hủy</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        let productItemCount = 1; // Bắt đầu từ 1 vì đã có item đầu tiên
+
+        function addProductItem() {
+            const productItems = document.getElementById('productItems');
+            const itemIndex = productItemCount++;
+
+            const productItem = `
+                <div class="card mb-3 product-item">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label class="form-label">Sản Phẩm</label>
+                                <select class="form-select product-select" name="Items[${itemIndex}].ProductId" required>
+                                    <option value="">-- Chọn Sản Phẩm --</option>
+                                    @foreach (var product in Model.Products)
+                                    {
+                                            <option value="@product.Value">@product.Text</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Số Lượng</label>
+                                <input type="number" class="form-control quantity-input"
+                                       name="Items[${itemIndex}].Quantity"
+                                       min="1" value="1" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Giá Nhập</label>
+                                <input type="number" class="form-control unit-cost-input"
+                                       name="Items[${itemIndex}].UnitCost"
+                                       min="0" step="1000" value="0" required>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Thành Tiền</label>
+                                <input type="text" class="form-control item-total" readonly value="0">
+                            </div>
+                            <div class="col-md-1">
+                                <label class="form-label">&nbsp;</label>
+                                <button type="button" class="btn btn-danger btn-sm w-100"
+                                        onclick="removeProductItem(this)">X</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            productItems.insertAdjacentHTML('beforeend', productItem);
+
+            // Thêm event listeners cho các input mới
+            const newItem = productItems.lastElementChild;
+            const quantityInput = newItem.querySelector('.quantity-input');
+            const unitCostInput = newItem.querySelector('.unit-cost-input');
+
+            quantityInput.addEventListener('input', calculateTotal);
+            unitCostInput.addEventListener('input', calculateTotal);
+
+            calculateTotal();
+        }
+
+        function removeProductItem(button) {
+            const item = button.closest('.product-item');
+            if (item && document.querySelectorAll('.product-item').length > 1) {
+                item.remove();
+                calculateTotal();
+            }
+        }
+
+        function calculateTotal() {
+            let totalQuantity = 0;
+            let totalAmount = 0;
+
+            document.querySelectorAll('.product-item').forEach(item => {
+                const quantityInput = item.querySelector('.quantity-input');
+                const unitCostInput = item.querySelector('.unit-cost-input');
+                const itemTotalInput = item.querySelector('.item-total');
+
+                const quantity = parseInt(quantityInput.value) || 0;
+                const unitCost = parseFloat(unitCostInput.value) || 0;
+                const itemTotal = quantity * unitCost;
+
+                if (itemTotalInput) {
+                    itemTotalInput.value = itemTotal.toLocaleString();
+                }
+                totalQuantity += quantity;
+                totalAmount += itemTotal;
+            });
+
+            document.getElementById('totalQuantity').textContent = totalQuantity;
+            document.getElementById('totalAmount').textContent = totalAmount.toLocaleString();
+        }
+
+        // Thêm event listeners cho các input có sẵn
+        document.addEventListener('DOMContentLoaded', function() {
+            const quantityInputs = document.querySelectorAll('.quantity-input');
+            const unitCostInputs = document.querySelectorAll('.unit-cost-input');
+
+            quantityInputs.forEach(input => {
+                input.addEventListener('input', calculateTotal);
+            });
+
+            unitCostInputs.forEach(input => {
+                input.addEventListener('input', calculateTotal);
+            });
+
+            calculateTotal();
+        });
+    </script>
+}

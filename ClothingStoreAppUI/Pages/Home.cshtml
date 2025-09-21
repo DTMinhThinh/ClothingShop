@@ -1,0 +1,505 @@
+﻿@page
+@model ClothingStoreAppUI.Pages.HomeModel
+@{
+    ViewData["Title"] = "Trang chủ - ClothingStore";
+}
+
+@section Styles {
+    <style>
+        /* Global Styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            color: #2c3e50 !important;
+        }
+
+        /* Cart Badge Styles */
+        #cart-badge {
+            font-size: 0.7em;
+            padding: 0.35em 0.5em;
+            min-width: 1.5em;
+            transition: all 0.3s ease;
+            display: none;
+        }
+
+        .badge-pulse {
+            animation: badgePulse 0.3s ease-in-out;
+        }
+
+        @@keyframes badgePulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        /* Product Card Styles */
+        .product-card {
+            transition: all 0.3s ease;
+            border: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .product-image {
+            height: 250px;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .product-card:hover .product-image {
+            transform: scale(1.05);
+        }
+
+        .product-price {
+            color: #e74c3c;
+            font-weight: 600;
+            font-size: 1.2em;
+        }
+
+        /* Add to Cart Button Styles */
+        .add-to-cart-btn {
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            border: none;
+        }
+
+        .add-to-cart-btn:hover:not(.disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .add-to-cart-btn.added-success {
+            background-color: #28a745 !important;
+            border-color: #28a745 !important;
+            transform: scale(0.95);
+        }
+
+        .add-to-cart-btn.disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* Hiệu ứng ripple khi click */
+        .add-to-cart-btn::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.3s, height 0.3s;
+        }
+
+        .add-to-cart-btn:active::after {
+            width: 300px;
+            height: 300px;
+        }
+
+        /* Toast notification mượt mà */
+        .toast {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @@keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Added message */
+        .added-to-cart-invisible {
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+        }
+    </style>
+}
+
+<div class="bg-secondary bg-opacity-10 py-3 mb-4">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h1 class="mb-0">Cửa Hàng Thời Trang</h1>
+            </div>
+            <div class="col-md-6 text-end">
+                <div class="d-flex justify-content-end gap-2">
+                    <a href="/Checkout" class="btn btn-outline-primary position-relative">
+                        <i class="bi bi-cart"></i> Giỏ Hàng
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="cart-badge">
+                            0
+                        </span>
+                    </a>
+                    <a href="/Login" class="btn btn-primary">
+                        <i class="bi bi-person"></i> Đăng Nhập
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Filter Section -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <input type="text" id="searchInput" class="form-control" placeholder="Tìm kiếm sản phẩm...">
+        </div>
+        <div class="col-md-4">
+            <select id="categoryFilter" class="form-select">
+                <option value="">Tất cả danh mục</option>
+                @foreach (var category in Model.Products.Select(p => p.CategoryName).Distinct())
+                {
+                    <option value="@category">@category</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-4">
+            <select id="sortFilter" class="form-select">
+                <option value="name">Sắp xếp theo tên</option>
+                <option value="price_asc">Giá tăng dần</option>
+                <option value="price_desc">Giá giảm dần</option>
+                <option value="newest">Mới nhất</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Products Grid -->
+    @if (Model.Products == null || !Model.Products.Any())
+    {
+        <div class="text-center py-5">
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> Không có sản phẩm nào được tìm thấy.
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row" id="productsGrid">
+            @foreach (var product in Model.Products.Where(p => p.IsActive))
+            {
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-4 product-card"
+                     data-name="@product.ProductName.ToLower()"
+                     data-category="@product.CategoryName"
+                     data-price="@product.Price"
+                     data-date="@product.CreateDate.Ticks">
+
+                    <div class="card h-100 product-card">
+                        <div class="position-relative">
+                            <img src="@product.ImageUrl" class="card-img-top product-image"
+                                 alt="@product.ProductName"
+                                 onerror="this.src='https://via.placeholder.com/300x300?text=No+Image'">
+
+                            @if (product.Quantity == 0)
+                            {
+                                <div class="position-absolute top-0 end-0 m-2">
+                                    <span class="badge bg-danger">Hết hàng</span>
+                                </div>
+                            }
+                            else if (DateTime.Now.Subtract(product.CreateDate).TotalDays < 7)
+                            {
+                                <div class="position-absolute top-0 start-0 m-2">
+                                    <span class="badge bg-success">Mới</span>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="card-body d-flex flex-column">
+                            <h6 class="card-title text-truncate" title="@product.ProductName">
+                                @product.ProductName
+                            </h6>
+
+                            <div class="mb-2">
+                                <span class="badge bg-secondary">@product.CategoryName</span>
+                            </div>
+
+                            <p class="card-text small text-muted flex-grow-1">
+                                @product.Description
+                            </p>
+
+                            <div class="mt-auto">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="h5 text-primary mb-0">
+                                        @(product.Price?.ToString("N0") ?? "0") VNĐ
+                                    </span>
+                                    <span class="text-muted small">
+                                        @product.Quantity sản phẩm
+                                    </span>
+                                </div>
+
+                                <div class="d-grid gap-2">
+                                    @if (product.Quantity > 0)
+                                    {
+                                        <button class="btn btn-primary btn-sm add-to-cart-btn"
+                                                data-product-id="@product.ProductID"
+                                                data-product-name="@product.ProductName"
+                                                data-product-price="@(product.Price ?? 0)" 
+                                                data-image="@product.ImageUrl">
+                                            <i class="bi bi-cart-plus"></i> Thêm vào giỏ
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button class="btn btn-outline-secondary btn-sm add-to-cart-btn disabled" disabled>
+                                            <i class="bi bi-cart-x"></i> Hết hàng
+                                        </button>
+                                    }
+
+                                    <button class="btn btn-outline-info btn-sm view-details"
+                                            data-product-id="@product.ProductID">
+                                        <i class="bi bi-eye"></i> Xem chi tiết
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<!-- Product Detail Modal -->
+<div class="modal fade" id="productModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="productModalLabel">Chi tiết sản phẩm</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Content will be loaded by JavaScript -->
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Quản lý giỏ hàng với animation mượt mà
+            class CartManager {
+                constructor() {
+                    this.cartKey = 'shoppingCart';
+                    this.addedMessageTimeouts = new Map();
+                    this.init();
+                }
+
+            init() {
+                this.updateCartBadge();
+                this.setupEventListeners();
+            }
+
+            getCart() {
+                const cart = localStorage.getItem(this.cartKey);
+                return cart ? JSON.parse(cart) : [];
+            }
+
+            saveCart(cart) {
+                 // LƯU VÀO CẢ localStorage VÀ sessionStorage
+                localStorage.setItem(this.cartKey, JSON.stringify(cart));
+                sessionStorage.setItem('currentCart', JSON.stringify(cart));
+                this.updateCartBadge();
+            }
+
+            // Tính tổng số lượng sản phẩm trong giỏ hàng
+            calculateCartQuantity() {
+                const cart = this.getCart();
+                return cart.reduce((total, item) => total + item.quantity, 0);
+            }
+
+            // Cập nhật badge với animation mượt mà
+            updateCartBadge() {
+                const cartQuantity = this.calculateCartQuantity();
+                const badge = document.getElementById('cart-badge');
+
+                if (!badge) return;
+
+                if (cartQuantity === 0) {
+                    badge.style.display = 'none';
+                    badge.textContent = '';
+                } else {
+                    badge.style.display = 'block';
+
+                    // Thêm animation khi thay đổi số lượng
+                    badge.classList.add('badge-pulse');
+                    setTimeout(() => {
+                        badge.classList.remove('badge-pulse');
+                    }, 300);
+
+                    badge.textContent = cartQuantity;
+                }
+            }
+
+           addToCart(productId, productName, price, image = null, quantity = 1) {
+                const cart = this.getCart();
+                const existingItem = cart.find(item => item.productId === productId);
+
+                let numericPrice;
+                if (price === null || price === undefined) {
+                    // Nếu price null, đặt giá mặc định (ví dụ: 0 hoặc giá từ database)
+                    numericPrice = 0;
+                    console.warn(`Price is null for product ${productId}, setting to 0`);
+                } else {
+                    numericPrice = typeof price === 'string' ? parseFloat(price) : price;
+                }
+
+                if (existingItem) {
+                    existingItem.quantity += quantity;
+                } else {
+                    cart.push({
+                        productId: productId,
+                        name: productName,
+                        price: numericPrice, // Lưu dưới dạng number
+                        image: image,
+                        quantity: quantity
+                    });
+                }
+
+                this.saveCart(cart);
+                this.showAddToCartNotification(productName);
+                this.showAddedMessage(productId);
+
+                // Lưu cart vào sessionStorage để chuyển trang
+                    localStorage.setItem('shoppingCart', JSON.stringify(cart));
+       
+                 this.updateCartBadge();
+                sessionStorage.setItem('currentCart', JSON.stringify(cart));
+            }
+
+            // Hiển thị thông báo "Added" tạm thời trên nút
+            showAddedMessage(productId) {
+                const button = document.querySelector(`.add-to-cart-btn[data-product-id="${productId}"]`);
+                if (!button) return;
+
+                // Lưu text gốc
+                const originalHtml = button.innerHTML;
+
+                // Hiển thị "Added!" với icon check
+                button.innerHTML = '<i class="bi bi-check-circle-fill"></i> Đã thêm!';
+                button.classList.add('added-success');
+
+                // Clear timeout cũ nếu có
+                if (this.addedMessageTimeouts.has(productId)) {
+                    clearTimeout(this.addedMessageTimeouts.get(productId));
+                }
+
+                // Set timeout để khôi phục trạng thái ban đầu
+                const timeoutId = setTimeout(() => {
+                    button.innerHTML = originalHtml;
+                    button.classList.remove('added-success');
+                    this.addedMessageTimeouts.delete(productId);
+                }, 2000);
+
+                this.addedMessageTimeouts.set(productId, timeoutId);
+            }
+
+            showAddToCartNotification(productName) {
+                const toast = document.createElement('div');
+                toast.className = 'position-fixed bottom-0 end-0 p-3';
+                toast.style.zIndex = '1050';
+                toast.innerHTML = `
+                    <div class="toast show" role="alert">
+                        <div class="toast-header">
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                            <strong class="me-auto">Thành công</strong>
+                            <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+                        </div>
+                        <div class="toast-body">
+                            Đã thêm "${productName}" vào giỏ hàng!
+                        </div>
+                    </div>
+                `;
+
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 3000);
+            }
+
+            setupEventListeners() {
+                document.addEventListener('click', (e) => {
+                    const addToCartBtn = e.target.closest('.add-to-cart-btn');
+                    if (addToCartBtn && !addToCartBtn.classList.contains('disabled')) {
+                        e.preventDefault();
+
+                        const { productId, productName, price, image } = addToCartBtn.dataset;
+                        this.addToCart(productId, productName, parseFloat(price), image);
+                    }
+                });
+            }
+        }
+
+        // Filter and search functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Khởi tạo giỏ hàng
+            window.cartManager = new CartManager();
+            
+            const searchInput = document.getElementById('searchInput');
+            const categoryFilter = document.getElementById('categoryFilter');
+            const sortFilter = document.getElementById('sortFilter');
+            const productCards = document.querySelectorAll('.product-card');
+
+            function filterProducts() {
+                const searchText = searchInput.value.toLowerCase();
+                const category = categoryFilter.value;
+                const sortBy = sortFilter.value;
+
+                let filteredProducts = Array.from(productCards).filter(card => {
+                    const name = card.dataset.name;
+                    const productCategory = card.dataset.category;
+                    const matchesSearch = name.includes(searchText);
+                    const matchesCategory = category === '' || productCategory === category;
+
+                    return matchesSearch && matchesCategory;
+                });
+
+                // Sort products
+                filteredProducts.sort((a, b) => {
+                    switch (sortBy) {
+                        case 'price_asc':
+                            return parseFloat(a.dataset.price) - parseFloat(b.dataset.price);
+                        case 'price_desc':
+                            return parseFloat(b.dataset.price) - parseFloat(a.dataset.price);
+                        case 'newest':
+                            return parseFloat(b.dataset.date) - parseFloat(a.dataset.date);
+                        default:
+                            return a.dataset.name.localeCompare(b.dataset.name);
+                    }
+                });
+
+                // Update display
+                productCards.forEach(card => card.style.display = 'none');
+                filteredProducts.forEach(card => card.style.display = 'block');
+            }
+
+            searchInput.addEventListener('input', filterProducts);
+            categoryFilter.addEventListener('change', filterProducts);
+            sortFilter.addEventListener('change', filterProducts);
+
+            // View details functionality
+            document.querySelectorAll('.view-details').forEach(button => {
+                button.addEventListener('click', function() {
+                    const productId = this.dataset.productId;
+                    // Load product details modal
+                    alert(`Xem chi tiết sản phẩm ID: ${productId}`);
+                });
+            });
+        });
+    </script>
+}

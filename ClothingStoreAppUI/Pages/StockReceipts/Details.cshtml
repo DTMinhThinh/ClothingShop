@@ -1,0 +1,86 @@
+﻿@page "{id:Guid}"
+@model ClothingStoreAppUI.Pages.StockReceipts.DetailsModel
+@{
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="container mt-4">
+        <div class="alert alert-danger">
+            @TempData["ErrorMessage"]
+        </div>
+        <a href="/StockReceipts/List" class="btn btn-secondary">Quay lại</a>
+    </div>
+}
+else if (Model.StockReceipt == null)
+{
+    <div class="container mt-4">
+        <div class="alert alert-danger">
+            Không tìm thấy phiếu nhập kho với mã này.
+        </div>
+        <a href="/StockReceipts/List" class="btn btn-secondary">Quay lại</a>
+    </div>
+}
+else
+{
+    <div class="bg-secondary bg-opacity-10 py-2 mb-2">
+        <div class="container">
+            <h4>Chi Tiết Phiếu Nhập Kho: @Model.StockReceipt.ReceiptId.ToString().Substring(0, 8)</h4>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h6>Thông Tin Phiếu</h6>
+                        <p><strong>Ngày tạo:</strong> @Model.StockReceipt.DateCreated.ToString("dd/MM/yyyy HH:mm")</p>
+                        <p><strong>Nhân viên:</strong> @Model.StockReceipt.EmployeeName</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h6>Tổng Hợp</h6>
+                        <p><strong>Tổng số lượng:</strong> @Model.StockReceipt.Items.Sum(i => i.Quantity)</p>
+                        <p><strong>Tổng thành tiền:</strong> @Model.StockReceipt.TotalAmount.ToString("N0") VNĐ</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h5>Chi Tiết Sản Phẩm</h5>
+        @if (Model.StockReceipt.Items != null && Model.StockReceipt.Items.Any())
+        {
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Sản Phẩm</th>
+                        <th>Số Lượng</th>
+                        <th>Đơn Giá</th>
+                        <th>Thành Tiền</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.StockReceipt.Items)
+                    {
+                        <tr>
+                            <td>@item.ProductName</td>
+                            <td>@item.Quantity</td>
+                            <td>@item.UnitCost.ToString("N0")</td>
+                            <td>@((item.Quantity * item.UnitCost).ToString("N0"))</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <div class="alert alert-warning">Không có sản phẩm nào trong phiếu nhập kho này.</div>
+        }
+
+        <a href="/StockReceipts/List" class="btn btn-secondary">Quay lại</a>
+    </div>
+}

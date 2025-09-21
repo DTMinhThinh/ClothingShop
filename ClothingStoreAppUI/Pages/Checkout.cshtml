@@ -1,0 +1,251 @@
+﻿@page
+@model ClothingStoreAppUI.Pages.CheckoutModel
+@{
+    ViewData["Title"] = "Thanh toán";
+}
+
+<div class="container mt-4">
+    <h2>Thanh toán</h2>
+
+    <form id="checkout-form">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card mb-4">
+                    <div class="card-header">Thông tin giao hàng</div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Họ và tên</label>
+                            <input type="text" class="form-control" name="fullName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Địa chỉ</label>
+                            <input type="text" class="form-control" name="address" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Số điện thoại</label>
+                            <input type="tel" class="form-control" name="phone" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" name="email" required>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">Đơn hàng của bạn</div>
+                    <div class="card-body">
+                        <div id="order-summary">
+                            <!-- Sẽ được điền bằng JavaScript -->
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between">
+                            <strong>Tổng cộng:</strong>
+                            <strong id="total-amount">0 VNĐ</strong>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 mt-3">Hoàn tất thanh toán</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        class CheckoutPage {
+            constructor() {
+                console.log('CheckoutPage initialized');
+                this.cart = this.loadAndValidateCart();
+                console.log('Cart data:', this.cart);
+                this.init();
+            }
+
+            // PHƯƠNG THỨC MỚI: Kiểm tra và sửa dữ liệu giỏ hàng
+            loadAndValidateCart() {
+                try {
+                    // ƯU TIÊN LẤY TỪ sessionStorage TRƯỚC
+                    let cartData = sessionStorage.getItem('currentCart');
+                    console.log('Cart data from sessionStorage:', cartData);
+
+                    console.log('=== STORAGE DEBUG ===');
+                    console.log('sessionStorage keys:', Object.keys(sessionStorage));
+                    console.log('localStorage keys:', Object.keys(localStorage));
+
+                    // NẾU KHÔNG CÓ THÌ LẤY TỪ localStorage
+                    if (!cartData) {
+                        cartData = localStorage.getItem('shoppingCart');
+                        console.log('Cart data from localStorage:', cartData);
+                    }
+
+                    let cart = [];
+                    if (cartData) {
+                        cart = JSON.parse(cartData);
+                    }
+
+                    console.log('Parsed cart:', cart);
+
+                   // Đảm bảo tất cả price là number, xử lý null/undefined
+             cart = cart.map(item => {
+            let price = item.price;
+            if (price === null || price === undefined || isNaN(price)) {
+                console.warn(`Invalid price for product ${item.productId}: ${price}, setting to 0`);
+                price = 0;
+            } 
+            else 
+            {
+                price = typeof price === 'string' ? parseFloat(price) : price;
+            }
+
+            let quantity = item.quantity;
+            if (quantity === null || quantity === undefined || isNaN(quantity)) {
+                console.warn(`Invalid quantity for product ${item.productId}: ${quantity}, setting to 1`);
+                quantity = 1;
+                } 
+            else 
+            {
+                quantity = typeof quantity === 'string' ? parseInt(quantity) : quantity;
+            }
+
+            return {
+                ...item,
+                price: price,
+                quantity: quantity
+            };
+        });
+
+                     // Lọc bỏ các item không hợp lệ (chỉ lọc những item thực sự hỏng)
+            cart = cart.filter(item =>
+                item.productId &&
+                item.name &&
+                item.quantity > 0  // Chỉ cần quantity > 0, price có thể = 0
+            );
+
+            console.log('Validated cart:', cart);
+            return cart;
+            } catch (error) {
+            console.error('Error loading cart:', error);
+            return [];
+                }
+            }
+
+            init() {
+                console.log('Initializing checkout page');
+                this.renderOrderSummary();
+                this.setupEventListeners();
+            }
+
+            renderOrderSummary() {
+                console.log('Rendering order summary');
+                const container = document.getElementById('order-summary');
+                let total = 0;
+                let html = '';
+
+                if (!container) {
+                    console.error('Order summary container not found!');
+                    return;
+                }
+
+                if (this.cart.length === 0) {
+                    html = '<div class="alert alert-warning">Giỏ hàng trống</div>';
+                    container.innerHTML = html;
+                    document.getElementById('total-amount').textContent = '0 VNĐ';
+                    return;
+                }
+
+                this.cart.forEach(item => {
+                    // ĐẢM BẢO price là number trước khi tính toán
+                    const itemPrice = item.price;
+                    const itemQuantity = item.quantity;
+                    const itemTotal = itemPrice * itemQuantity;
+                    total += itemTotal;
+
+                    html += `
+                        <div class="cart-item mb-3 p-2 border rounded">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">${item.name}</h6>
+                                    <small class="text-muted">Số lượng: ${item.quantity}</small>
+                                </div>
+                                <div class="text-end">
+                                    <div>${itemPrice.toLocaleString()} VNĐ x ${item.quantity}</div>
+                                    <strong>${itemTotal.toLocaleString()} VNĐ</strong>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = html;
+
+                const totalElement = document.getElementById('total-amount');
+                if (totalElement) {
+                    totalElement.textContent = total.toLocaleString() + ' VNĐ';
+                }
+            }
+
+            setupEventListeners() {
+                const form = document.getElementById('checkout-form');
+                if (!form) {
+                    console.error('Checkout form not found!');
+                    return;
+                }
+
+                form.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+
+                    if (this.cart.length === 0) {
+                        alert('Giỏ hàng trống. Vui lòng thêm sản phẩm trước khi thanh toán.');
+                        return;
+                    }
+
+                    const formData = new FormData(e.target);
+                    const shippingInfo = {
+                        fullName: formData.get('fullName'),
+                        address: formData.get('address'),
+                        phone: formData.get('phone'),
+                        email: formData.get('email')
+                    };
+
+                    console.log('Submitting order:', { shippingInfo, cart: this.cart });
+
+                    try {
+                        const response = await fetch('/api/order/create', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                userId: 'guest',
+                                cartItems: this.cart,
+                                shippingInfo: shippingInfo
+                            })
+                        });
+
+                        const result = await response.json();
+                        console.log('Order response:', result);
+
+                        if (result.success) {
+                            localStorage.removeItem('shoppingCart');
+                            sessionStorage.removeItem('currentCart');
+                            alert('Đặt hàng thành công!');
+                            window.location.href = '/OrderSuccess?id=' + result.orderId;
+                        } else {
+                            alert('Có lỗi xảy ra: ' + result.message);
+                        }
+                    } catch (error) {
+                        console.error('Order error:', error);
+                        alert('Lỗi kết nối: ' + error.message);
+                    }
+                });
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, initializing checkout...');
+            new CheckoutPage();
+        });
+    </script>
+}

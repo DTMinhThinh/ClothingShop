@@ -1,0 +1,57 @@
+﻿@page
+@model ClothingStoreAppUI.Pages.Products.CreateModel
+@{
+}
+
+<div class="bg-secondary bg-opacity-10 py-2 mb-2">
+    <div class="container">
+        <h4>Add Product</h4>
+    </div>
+</div>
+
+<div>
+    <div class="container">
+        <form method="post">
+
+            <!-- Combo box cho Category -->
+            <div class="mb-3">
+                <label for="Category" class="form-label">Category</label>
+                <select class="form-select" id="Category" asp-for="product.CategoryID">
+                    <option value="">-- Select Category --</option>
+                    @if (Model.Categories != null)
+                    {
+                        @foreach (var category in Model.Categories)
+                        {
+                            <option value="@category.Value">@category.Text</option>
+                        }
+                    }
+                </select>
+                <span asp-validation-for="product.CategoryID" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label for="Name" class="form-label">Product Name</label>
+                <input type="text" class="form-control" id="Name" asp-for="product.ProductName">
+            </div>
+
+            <div class="mb-3">
+                <label for="Price" class="form-label">Price</label>
+                <input type="number" class="form-control" id="Price" asp-for="product.Price">
+            </div>
+
+            <div class="mb-3">
+                <label for="Description" class="form-label">Description</label>
+                <textarea class="form-control" id="Description" asp-for="product.Description" rows="3"></textarea>
+            </div>
+
+            <div class="mb-3">
+                <label for="ImageUrl" class="form-label">ImageUrl</label>
+                <input type="text" class="form-control" id="ImageUrl" asp-for="product.ImageUrl">
+            </div>
+
+            <div class="mb-3">
+                <button class="btn btn-primary" type="submit">Submit</button>
+            </div>
+        </form>
+    </div>
+</div>

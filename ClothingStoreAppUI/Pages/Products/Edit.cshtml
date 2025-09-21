@@ -1,0 +1,73 @@
+﻿    @page "{id:Guid}"
+    @model ClothingStoreAppUI.Pages.Products.EditModel
+    @{
+    }
+
+
+    <div class="bg-secondary bg-opacity-10 py-2 mb-2">
+        <div class="container">
+            <h4>Edit Product</h4>
+        </div>
+    </div>
+
+    <div>
+        <div class="container">
+            <form method="post">
+
+            <!-- Combo box cho Category -->
+            <div class="mb-3">
+                <label for="CategoryID" class="form-label">Category</label>
+                <select class="form-select" id="CategoryID" asp-for="Product.CategoryID">
+                    <option value="">-- Select Category --</option>
+                    @foreach (var category in Model.Categories)
+                    {
+                        <option value="@category.Value" selected="@category.Selected">@category.Text</option>
+                    }
+                </select>
+                <span asp-validation-for="Product.CategoryID" class="text-danger"></span>
+
+            </div>
+
+                <div class="mb-3">
+                    <label for="Name" class="form-label">Product Name</label>
+                    <input type="text" class="form-control" id="Name" asp-for="Product.ProductName">
+                </div>
+
+                <div class="mb-3">
+                    <label for="Price" class="form-label">Price</label>
+                    <input type="number" class="form-control" id="Price" asp-for="Product.Price">
+                </div>
+
+                <div class="mb-3">
+                    <label for="Description" class="form-label">Description</label>
+                    <textarea class="form-control" id="Description" asp-for="Product.Description" rows="3"></textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label for="ImageUrl" class="form-label">ImageUrl</label>
+                    <input type="text" class="form-control" id="ImageUrl" asp-for="Product.ImageUrl">
+                </div>
+
+                <div class="mb-3">
+                    <button class="btn btn-primary" type="submit">Submit</button>
+
+                    <button class="btn btn-danger delete-btn" type="submit" asp-page-handler="Delete">
+                        Delete Product
+                    </button>
+                 </div>
+
+
+            </form>
+        </div>
+    </div>
+
+@section Scripts {
+    <script>
+        // Confirmation cho nút Delete - bằng class
+        document.querySelector('.delete-btn').addEventListener('click', function (e) {
+            if (!confirm('Are you sure you want to delete this product?')) {
+                e.preventDefault();
+            }
+        });
+    </script>
+}
